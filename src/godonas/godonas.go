@@ -10,164 +10,24 @@
  */
 package main
 
-import (
-    "fmt"
-    "net"
-    "encoding/binary"
-    "bytes"
-    "io"
-    "strings"
-    "math/rand"
-)
-
 import "dns"
 
-type Header struct {
-    id      uint16
-    status  uint16
-    qdcount uint16
-    ancount uint16
-    nscount uint16
-    arcount uint16
-}
+import (
+    "fmt"
+)
 
-type Question struct {
-    qname  []string
-    qtype  uint16
-    qclass uint16 
-}
+/*
+    "bytes"
+    "encoding/binary"
+    "io"
+*/
+    // "net"
+    // "strings"
+    // "math/rand"
 
-type ResourceRecord struct {
-    name     []string
-    rr_type  uint16
-    class    uint16 
-    ttl      uint32
-    rdlength uint16
-    rdata    []byte
-}
 
-type Answer ResourceRecord
 
-type Authority ResourceRecord
-
-type Additional ResourceRecord
-
-type Message struct {
-    header     Header
-    question   []Question  // allow for multiple questions even though most DNS servers don't support this
-    answer     []Answer  
-    authority  []Authority
-    additional []Additional
-}
-
-func (header *Header) Unpack(r io.Reader) {
-    binary.Read(r, binary.BigEndian, &header.id)
-    binary.Read(r, binary.BigEndian, &header.status)
-    binary.Read(r, binary.BigEndian, &header.qdcount)
-    binary.Read(r, binary.BigEndian, &header.ancount)
-    binary.Read(r, binary.BigEndian, &header.nscount)
-    binary.Read(r, binary.BigEndian, &header.arcount)
-}
-
-func (header Header) Pack() []byte {
-    buf := new(bytes.Buffer)
-
-    binary.Write(buf, binary.BigEndian, header.id)
-    binary.Write(buf, binary.BigEndian, header.status)
-    binary.Write(buf, binary.BigEndian, header.qdcount)
-    binary.Write(buf, binary.BigEndian, header.ancount)
-    binary.Write(buf, binary.BigEndian, header.nscount)
-    binary.Write(buf, binary.BigEndian, header.arcount)
- 
-    return buf.Bytes()
-}
-
-func (header *Header) Init() {
-    header.id      = 0
-    header.status  = 0
-    header.qdcount = 0
-    header.ancount = 0
-    header.nscount = 0
-    header.arcount = 0
-}
-
-func (header Header) GetField(field int) uint16 {
-    switch field {
-    case dns.ID:
-        return header.id
-    case dns.QR:
-        return (header.status & 0x8000) >> 15
-    // to be implemented 
-    }
-    return 0
-}
-
-func (header *Header) SetCount(field int, value uint16) {
-    switch field {
-    case dns.QDCOUNT:
-        header.qdcount = value
-    case dns.ANCOUNT:
-        header.ancount = value
-    case dns.NSCOUNT:
-        header.nscount = value
-    case dns.ARCOUNT:
-        header.arcount = value
-    }
-}
-
-func (header *Header) SetField(field int, value uint16) {
-    switch field {
-    case dns.ID:
-        header.id = value
-    case dns.RCODE:
-        header.status |= (value & 0x0f)
-    case dns.RA:
-        header.status |= (value & 0x01) << 7
-    case dns.RD:
-        header.status |= (value & 0x01) << 8
-    case dns.TC:
-        header.status |= (value & 0x01) << 9
-    case dns.AA:
-        header.status |= (value & 0x01) << 10
-    case dns.OPCODE:
-        header.status |= (value & 0x0f) << 14
-    case dns.QR:
-        header.status |= (value & 0x01) << 15
-    }
-}
-
-func ReadFQName(s *bytes.Buffer, r []byte) []string {
-    var oct_len uint8
-    var data    []string
-    for {
-        binary.Read(io.Reader(s), binary.BigEndian, &oct_len)
-        if oct_len == 0 {
-            return data
-        }
-        if (oct_len & 0xc0) == 0xc0 {  // it's a pointer
-            offset := int16(oct_len & 0x3f) * 256 
-            binary.Read(io.Reader(s), binary.BigEndian, &oct_len)
-            offset += int16(oct_len)
-
-            return append(data, ReadFQName(bytes.NewBuffer(r[offset:]), r)...)
-        }
-        data = append(data, string(s.Next(int(oct_len))))
-    }
-}
-
-func WriteFQName(name []string) []byte {
-    buf := new(bytes.Buffer)
-
-    for _, label := range name {
-        var length byte = byte(len(label))
-        binary.Write(buf, binary.BigEndian, length)
-        buf.WriteString(label)
-    }
-    binary.Write(buf, binary.BigEndian, byte(0))
-
-    return buf.Bytes()
-}
-
+/*
 func (question *Question) Unpack(s *bytes.Buffer, r []byte) {
     question.qname = ReadFQName(s, r)
     binary.Read(io.Reader(s), binary.BigEndian, &question.qtype)
@@ -183,7 +43,9 @@ func (question Question) Pack() []byte {
   
     return buf.Bytes()
 }
+*/
 
+/*
 func (answer *Answer) Unpack(s *bytes.Buffer, r []byte) {
     answer.name  = ReadFQName(s, r)
     binary.Read(io.Reader(s), binary.BigEndian, &answer.rr_type)
@@ -192,7 +54,9 @@ func (answer *Answer) Unpack(s *bytes.Buffer, r []byte) {
     binary.Read(io.Reader(s), binary.BigEndian, &answer.rdlength)
     answer.rdata = s.Next(int(answer.rdlength))
 }
+*/
 
+/*
 func (authority *Authority) Unpack(s *bytes.Buffer, r []byte) {
     authority.name  = ReadFQName(s, r)
     binary.Read(io.Reader(s), binary.BigEndian, &authority.rr_type)
@@ -210,43 +74,36 @@ func (additional *Additional) Unpack(s *bytes.Buffer, r []byte) {
     binary.Read(io.Reader(s), binary.BigEndian, &additional.rdlength)
     additional.rdata = s.Next(int(additional.rdlength))
 }
+*/
 
+/*
 func (message *Message) Unpack(s *bytes.Buffer) {
     r := s.Bytes()
     message.header.Unpack(s)
 
-    message.question = make([]Question, message.header.qdcount)
-    for i:=0; i<int(message.header.qdcount); i++ {
+    message.question = make([]Question, message.header.Qdcount)
+    for i:=0; i<int(message.header.Qdcount); i++ {
         message.question[i].Unpack(s, r)
     }
 
-    message.answer = make([]Answer, message.header.ancount)
-    for i:=0; i<int(message.header.ancount); i++ {
+    message.answer = make([]Answer, message.header.Ancount)
+    for i:=0; i<int(message.header.Ancount); i++ {
         message.answer[i].Unpack(s, r)
     }
 
-    message.authority = make([]Authority, message.header.nscount)
-    for i:=0; i<int(message.header.nscount); i++ {
+    message.authority = make([]Authority, message.header.Nscount)
+    for i:=0; i<int(message.header.Nscount); i++ {
         message.authority[i].Unpack(s, r)
     }
 
-    message.additional = make([]Additional, message.header.arcount)
-    for i:=0; i<int(message.header.arcount); i++ {
+    message.additional = make([]Additional, message.header.Arcount)
+    for i:=0; i<int(message.header.Arcount); i++ {
         message.additional[i].Unpack(s, r)
     }
 
     fmt.Println(message)
 }
-
-func (message Message) Pack() []byte {
-    var data = message.header.Pack()
-
-    for i:=0; i<int(message.header.qdcount); i++ {
-        data = append(data, message.question[i].Pack()...)
-    }
-
-    return data
-}
+*/
 
 
 
@@ -299,6 +156,7 @@ func (authority *DNSAuthority) Init(s *bytes.Buffer) {
 */
 
 
+/*
 func (message Message) HandleAIn() {
     fmt.Println("Handlke A In")
     fmt.Println(message.question[0].qname)
@@ -318,22 +176,6 @@ func (message Message) HandleAIn() {
     connection.Close()
 }
 
-func (message *Message) AddQuestion(qtype uint16, qclass uint16, name string) {
-    message.question = append(message.question, Question{qtype: qtype, qclass: qclass, qname: strings.Split(name, ".")})
-    message.header.qdcount++
-}
-
-func (message *Message) DNSQuery(name string, query uint16) {
-    message.header.Init()
-
-    message.header.SetField(dns.ID, uint16(rand.Int31n(0xffff)))
-
-    message.header.SetField(dns.OPCODE, dns.QUERY)
-    message.header.SetField(dns.RD, 1)
-
-    message.AddQuestion(query, dns.IN, name)
-}
-
 func (message *Message) DNSQueryA(name string) {
     message.header.Init()
 
@@ -344,6 +186,7 @@ func (message *Message) DNSQueryA(name string) {
 
     message.AddQuestion(dns.A, dns.IN, name)
 }
+*/
 
 /*
 func (server DNSServer) Run() {
@@ -406,28 +249,12 @@ fmt.Println(header.arcount)
     return new_buf
 }
 
-func (message Message) SendDNSQuery(server string) Message {
-    connection, _ := net.Dial("udp", server)
-
-    connection.Write(message.Pack())
-
-    var buf [dns.MAX_MESSAGE_LENGTH]byte
-    len, _ := connection.Read(buf[:])
-    
-    var answer Message
-    r := bytes.NewBuffer(buf[:len])
-    
-    answer.Unpack(r)
-
-    return answer
-}
-
 
 func main() {
-    var query Message
+    var query dns.Message
 
     query.DNSQuery("www.xs4all.nl", dns.A)
-    answer := query.SendDNSQuery("192.168.1.3:53")
+    answer := query.SendDNSQuery("75.75.75.75:53")
 
     fmt.Println(answer.Pack())
 /*

@@ -11,60 +11,69 @@
 
 package dns
 
-const MAX_MESSAGE_LENGTH int = 512
 
-const (
-    A     = 1   // a host address
-    NS    = 2   // an authoritative name server
-    MD    = 3   // a mail destination (Obsolete - use MX)
-    MF    = 4   // a mail forwarder (Obsolete - use MX)
-    CNAME = 5   // the canonical name for an alias
-    SOA   = 6   // marks the start of a zone of authority
-    MB    = 7   // a mailbox domain name (EXPERIMENTAL)
-    MG    = 8   // a mail group member (EXPERIMENTAL)
-    MR    = 9   // a mail rename domain name (EXPERIMENTAL)
-    NULL  = 10  // a null RR (EXPERIMENTAL)
-    WKS   = 11  // a well known service description
-    PTR   = 12  // a domain name pointer
-    HINFO = 13  // host information
-    MINFO = 14  // mailbox or mail list information
-    MX    = 15  // mail exchange
-    TXT   = 16  // text strings
-    AXFR  = 252 // A request for a transfer of an entire zone
-    MAILB = 253 // A request for mailbox-related records (MB, MG or MR)
-    MAILA = 254 // A request for mail agent RRs (Obsolete - see MX)
-    ALL   = 255 // A request for all records
+import (
+    "io"
+    "encoding/binary"
+    "bytes"
 )
 
-const (
-    IN = 1 // the Internet
-    CS = 2 // the CSNET class (Obsolete - used only for examples in some obsolete RFCs)
-    CH = 3 // the CHAOS class
-    HS = 4 // Hesiod [Dyer 87]
-)
 
-const (
-    QUERY  = 0 // a standard query (QUERY)
-    IQUERY = 1 // an inverse query (IQUERY)
-    STATUS = 2 // a server status request (STATUS)
-)
+func ReadFQName(s *bytes.Buffer, r []byte) []string {
+    var oct_len uint8
+    var data    []string
+    for {
+        binary.Read(io.Reader(s), binary.BigEndian, &oct_len)
+        if oct_len == 0 {
+            return data
+        }
+        if (oct_len & 0xc0) == 0xc0 {  // it's a pointer
+            offset := int16(oct_len & 0x3f) * 256
+            binary.Read(io.Reader(s), binary.BigEndian, &oct_len)
+            offset += int16(oct_len)
 
-const (
-    ID     = iota
-    GR     = iota
-    OPCODE = iota
-    AA     = iota
-    TC     = iota
-    RD     = iota
-    RA     = iota
-    QR     = iota
-    RCODE  = iota
-)
+            return append(data, ReadFQName(bytes.NewBuffer(r[offset:]), r)...)
+        }
+        data = append(data, string(s.Next(int(oct_len))))
+    }
+}
 
-const (
-    QDCOUNT = iota
-    ANCOUNT = iota
-    NSCOUNT = iota
-    ARCOUNT = iota
-)
+
+func WriteFQName(name []string) []byte {
+    buf := new(bytes.Buffer)
+
+    for _, label := range name {
+        var length byte = byte(len(label))
+        binary.Write(buf, binary.BigEndian, length)
+        buf.WriteString(label)
+    }
+    binary.Write(buf, binary.BigEndian, byte(0))
+
+    return buf.Bytes()
+}
+
+
+type ResourceRecord struct {
+    name     []string
+    rr_type  uint16
+    class    uint16
+    ttl      uint32
+    rdlength uint16
+    rdata    []byte
+}
+
+
+// 
+
+type Additional ResourceRecord
+
+func (additional *Additional) Unpack(s *bytes.Buffer, r []byte) {
+    additional.name  = ReadFQName(s, r)
+    binary.Read(io.Reader(s), binary.BigEndian, &additional.rr_type)
+    binary.Read(io.Reader(s), binary.BigEndian, &additional.class)
+    binary.Read(io.Reader(s), binary.BigEndian, &additional.ttl)
+    binary.Read(io.Reader(s), binary.BigEndian, &additional.rdlength)
+    additional.rdata = s.Next(int(additional.rdlength))
+}
+
 
