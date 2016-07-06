@@ -15,6 +15,7 @@ import (
     "io"
     "encoding/binary"
     "bytes"
+    "fmt"
 )
 
 type Question struct {
@@ -39,4 +40,11 @@ func (question *Question) Unpack(s *bytes.Buffer, r []byte) {
     question.qname = ReadFQName(s, r)
     binary.Read(io.Reader(s), binary.BigEndian, &question.qtype)
     binary.Read(io.Reader(s), binary.BigEndian, &question.qclass)
+}
+
+
+func (question *Question) Print() {
+    fmt.Println(question.qname)
+    fmt.Println(question.qtype)
+    fmt.Println(question.qclass)
 }

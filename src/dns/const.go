@@ -39,6 +39,16 @@ const (
     ALL   = 255 // A request for all records
 )
 
+func Type2string(rr_type uint16) string {
+    switch rr_type {
+    case A:
+        return "a host address"
+    case NS:
+        return "an authoritative name server"
+    }
+    return "What did you do cowboy";
+}
+
 // CLASS values
 const (
     IN = 1 // the Internet

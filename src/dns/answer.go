@@ -16,6 +16,7 @@ import (
     "encoding/binary"
     "bytes"
     "strings"
+    "net"
 )
 
 import "fmt"
@@ -36,5 +37,13 @@ func (answer *Answer) Unpack(s *bytes.Buffer, r []byte) {
 
 func (answer *Answer) Print() {
     fmt.Println(strings.Join(answer.name, "."))
+    fmt.Println(Type2string(answer.rr_type))
     fmt.Println(answer.ttl)
+    fmt.Println(answer.rdlength)
+    if answer.rr_type == A {
+        var ip net.IP = answer.rdata
+        fmt.Println(ip)
+    } else {
+        fmt.Println(answer.rdata)
+    }
 }

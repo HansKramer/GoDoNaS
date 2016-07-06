@@ -15,6 +15,7 @@ import (
     "encoding/binary"
     "io"
     "bytes"
+    "fmt"
 )
 
 
@@ -59,6 +60,12 @@ func (header Header) Pack() []byte {
     binary.Write(buf, binary.BigEndian, header.Arcount)
 
     return buf.Bytes()
+}
+
+
+func (header Header) Print() {
+    fmt.Println(header)
+    fmt.Printf("Status : %d\n", header.status)
 }
 
 

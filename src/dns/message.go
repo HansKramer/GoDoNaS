@@ -105,7 +105,11 @@ func (message Message) Send(server string) Message {
 
 
 func (message Message) Print() {
+    message.header.Print()
+    for _, question := range message.question {
+         question.Print()
+    }
     for _, answer := range message.answer {
-        answer.Print()
+         answer.Print()
     }
 }
