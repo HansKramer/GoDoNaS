@@ -34,16 +34,17 @@ func (answer *Answer) Unpack(s *bytes.Buffer, r []byte) {
 }
 
 
-
-func (answer *Answer) Print() {
-    fmt.Println(strings.Join(answer.name, "."))
-    fmt.Println(Type2string(answer.rr_type))
-    fmt.Println(answer.ttl)
-    fmt.Println(answer.rdlength)
+func (answer *Answer) String() string {
+    result := fmt.Sprintln(strings.Join(answer.name, "."))
+    result += fmt.Sprintln(Type2string(answer.rr_type))
+    result += fmt.Sprintln(answer.ttl)
+    result += fmt.Sprintln(answer.rdlength)
     if answer.rr_type == A {
         var ip net.IP = answer.rdata
-        fmt.Println(ip)
+        result += fmt.Sprintln(ip)
     } else {
-        fmt.Println(answer.rdata)
+        result += fmt.Sprintln(answer.rdata)
     }
+
+    return result
 }

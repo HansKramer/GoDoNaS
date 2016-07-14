@@ -43,8 +43,10 @@ func (question *Question) Unpack(s *bytes.Buffer, r []byte) {
 }
 
 
-func (question *Question) Print() {
-    fmt.Println(question.qname)
-    fmt.Println(question.qtype)
-    fmt.Println(question.qclass)
-}
+func (question *Question) String() string {
+    result := fmt.Sprintln(question.qname)
+    result += fmt.Sprintln(question.qtype)
+    result += fmt.Sprintln(question.qclass)
+
+    return result
+} 

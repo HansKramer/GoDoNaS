@@ -63,9 +63,15 @@ func (header Header) Pack() []byte {
 }
 
 
-func (header Header) Print() {
-    fmt.Println(header)
-    fmt.Printf("Status : %d\n", header.status)
+func (header Header) String() string {
+    result := fmt.Sprintf("Id: %d\n", header.id)
+    result += fmt.Sprintf("Status : %d\n", header.status)
+    result += fmt.Sprintf("QD Count : %d\n", header.Qdcount)
+    result += fmt.Sprintf("AN Count : %d\n", header.Ancount)
+    result += fmt.Sprintf("NS Count : %d\n", header.Nscount)
+    result += fmt.Sprintf("AR Count : %d\n", header.Arcount)
+
+    return result
 }
 
 

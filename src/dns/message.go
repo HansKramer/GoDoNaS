@@ -65,8 +65,6 @@ func (message *Message) Unpack(s *bytes.Buffer) {
     for i:=0; i<int(message.header.Arcount); i++ {
         message.additional[i].Unpack(s, r)
     }
-
-//    fmt.Println(message)
 }
 
 
@@ -104,12 +102,14 @@ func (message Message) Send(server string) Message {
 }
 
 
-func (message Message) Print() {
-    message.header.Print()
+func (message Message) String() string {
+    result := message.header.String()
     for _, question := range message.question {
-         question.Print()
+         result += question.String()
     }
     for _, answer := range message.answer {
-         answer.Print()
+         result += answer.String()
     }
+
+    return result
 }
