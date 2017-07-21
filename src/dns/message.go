@@ -16,11 +16,39 @@ import (
     "strings"
     "math/rand"
     "net"
-//    "fmt"
+    "log"
+    "fmt"
+    "strconv"
+    "stringutil"
 )
 
-// Message
+// debug function
+func hex_dump(buffer []byte) string {
+    result := ""
 
+    var ascii [16]byte
+    for i := range ascii { ascii[i] = '.' }
+    for i, b := range buffer[:] {
+        result += fmt.Sprintf("%02X ", b)
+        if strconv.IsPrint(rune(b)) {
+            ascii[i%16] = b
+        }
+        if i % 16 == 15 {
+            result += fmt.Sprintf(" %s\n", ascii)
+            for i := range ascii { ascii[i] = '.' }
+        }
+    }
+    if len(buffer) % 16 != 0 {
+        for i := 0; i < 16 - (len(buffer) % 16); i++ {
+            result += fmt.Sprintf("   ")
+        } 
+        result += fmt.Sprintf(" %s\n", ascii[:len(buffer)%16])
+    }
+
+    return result
+}
+
+// Message
 
 type Message struct {
     header     Header
@@ -28,6 +56,21 @@ type Message struct {
     answer     []Answer
     authority  []Authority
     additional []Additional
+}
+
+
+func (message *Message) Recv(sock *net.UDPConn) {
+    var buffer [MAX_MESSAGE_LENGTH]byte
+    if rlen, remote, err := sock.ReadFromUDP(buffer[:]); err == nil {
+        log.Printf("%s %d", remote, rlen)
+        fmt.Println(hex_dump(buffer[0:rlen]))
+        fmt.Println(stringutil.Hexdump(buffer[0:rlen]))
+
+	message.Unpack(bytes.NewBuffer(buffer[:rlen]))
+        fmt.Println(message.String())
+    } else {
+       log.Fatal(err)
+    }
 }
 
 

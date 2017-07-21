@@ -17,7 +17,7 @@ import (
     "net"
     "fmt"
     "strconv"
-    "bytes"
+//    "bytes"
 )
 
 
@@ -53,27 +53,28 @@ func first(args ...interface{}) interface{} {
 
 
 func main() {
-    var err error
+    if sock, err := net.ListenUDP("udp", first(net.ResolveUDPAddr("udp", ":53")).(*net.UDPAddr)); err == nil {
+        for {
+	    var message dns.Message
+	    message.Recv(sock)
+            fmt.Println(message.String())
 
-    sock, err := net.ListenUDP("udp", first(net.ResolveUDPAddr("udp", ":53")).(*net.UDPAddr))
-    if err != nil {
-        log.Fatal(err)
-    }
+	    /*
+            var buffer [dns.MAX_MESSAGE_LENGTH]byte
+            if rlen, remote, err := sock.ReadFromUDP(buffer[:]); err == nil {
+                log.Printf("%s %d", remote, rlen)
 
-    var buffer [dns.MAX_MESSAGE_LENGTH]byte
+                fmt.Println(hex_dump(buffer[0:rlen]))
 
-    for {
-        rlen, remote, err := sock.ReadFromUDP(buffer[:])
-        if err != nil {
-            log.Fatal(err)
+                var message dns.Message
+                message.Unpack(bytes.NewBuffer(buffer[:rlen]))
+                fmt.Println(message.String())
+	    } else {
+                log.Fatal(err)
+            }
+	    */
         }
-        log.Printf("%s %d", remote, rlen)
-
-        fmt.Println(hex_dump(buffer[0:rlen]))
-        
-        var message dns.Message
-
-        message.Unpack(bytes.NewBuffer(buffer[:rlen]))
-        fmt.Println(message.String())
+    } else {
+        log.Fatal(err)
     }
 }
