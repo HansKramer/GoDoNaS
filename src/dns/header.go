@@ -64,8 +64,16 @@ func (header Header) Pack() []byte {
 
 
 func (header Header) String() string {
-    result := fmt.Sprintf("Id: %d\n", header.id)
-    result += fmt.Sprintf("Status : %d\n", header.status)
+    result := fmt.Sprintf("Id: %d\n",      header.GetField(ID))
+    result += fmt.Sprintf("Status : %d\n", header.GetField(STATUS))
+    result += fmt.Sprintf("    QR : %d\n", header.GetField(QR))
+    result += fmt.Sprintf("Opcode : %d\n", header.GetField(OPCODE))
+    result += fmt.Sprintf("    AA : %d\n", header.GetField(AA))
+    result += fmt.Sprintf("    TC : %d\n", header.GetField(TC))
+    result += fmt.Sprintf("    RD : %d\n", header.GetField(RD))
+    result += fmt.Sprintf("    RA : %d\n", header.GetField(RA))
+    result += fmt.Sprintf("     Z : %d\n", header.GetField(Z))
+    result += fmt.Sprintf(" RCODE : %d\n", header.GetField(RCODE))
     result += fmt.Sprintf("QD Count : %d\n", header.Qdcount)
     result += fmt.Sprintf("AN Count : %d\n", header.Ancount)
     result += fmt.Sprintf("NS Count : %d\n", header.Nscount)
@@ -79,9 +87,24 @@ func (header Header) GetField(field int) uint16 {
     switch field {
     case ID:
         return header.id
+    case STATUS:
+        return header.status
     case QR:
-        return (header.status & 0x8000) >> 15
-    // to be implemented
+        return (header.status >> 15) & 0x01
+    case OPCODE:
+        return (header.status >> 11) & 0x0f
+    case AA:
+	return (header.status >> 10) & 0x01
+    case TC:
+	return (header.status >>  9) & 0x01
+    case RD:
+	return (header.status >>  8) & 0x01
+    case RA:
+	return (header.status >>  7) & 0x01
+    case Z:
+        return (header.status >>  4) & 0x07
+    case RCODE:
+	return header.status & 0x0f
     }
     return 0
 }
@@ -91,20 +114,23 @@ func (header *Header) SetField(field int, value uint16) {
     switch field {
     case ID:
         header.id = value
-    case RCODE:
-        header.status |= (value & 0x0f)
-    case RA:
-        header.status |= (value & 0x01) << 7
-    case RD:
-        header.status |= (value & 0x01) << 8
-    case TC:
-        header.status |= (value & 0x01) << 9
-    case AA:
-        header.status |= (value & 0x01) << 10
-    case OPCODE:
-        header.status |= (value & 0x0f) << 14
+    case STATUS:
+        header.status = value
     case QR:
         header.status |= (value & 0x01) << 15
+    case OPCODE:
+        header.status |= (value & 0x0f) << 11
+    case AA:
+        header.status |= (value & 0x01) << 10
+    case TC:
+        header.status |= (value & 0x01) << 9
+    case RD:
+        header.status |= (value & 0x01) << 8
+    case RA:
+        header.status |= (value & 0x01) << 7
+    case Z:
+        header.status |= (value & 0x07) << 4
+    case RCODE:
+        header.status |= (value & 0x0f)
     }
 }
-

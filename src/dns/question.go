@@ -16,6 +16,7 @@ import (
     "encoding/binary"
     "bytes"
     "fmt"
+    "strings"
 )
 
 type Question struct {
@@ -36,17 +37,16 @@ func (question Question) Pack() []byte {
 }
 
 
-func (question *Question) Unpack(s *bytes.Buffer, r []byte) {
-    question.qname = ReadFQName(s, r)
-    binary.Read(io.Reader(s), binary.BigEndian, &question.qtype)
-    binary.Read(io.Reader(s), binary.BigEndian, &question.qclass)
+func (question *Question) Unpack(m MessageStream) {
+    question.qname = ReadFQName(m)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &question.qtype)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &question.qclass)
 }
 
 
 func (question *Question) String() string {
-    result := fmt.Sprintln(question.qname)
-    result += fmt.Sprintln(question.qtype)
-    result += fmt.Sprintln(question.qclass)
-
-    return result
-} 
+    return fmt.Sprintf("question: %s type=%s class=%s",
+                       strings.Join(question.qname, "."),
+		       Type2string(question.qtype),
+		       ClassMap[question.qclass])
+}

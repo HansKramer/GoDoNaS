@@ -15,20 +15,44 @@ package dns
 import (
     "io"
     "encoding/binary"
-    "bytes"
+    "fmt"
+    "strings"
+    "net"
 )
 
 
 type Authority ResourceRecord
 
 
-func (authority *Authority) Unpack(s *bytes.Buffer, r []byte) {
-    authority.name  = ReadFQName(s, r)
-    binary.Read(io.Reader(s), binary.BigEndian, &authority.rr_type)
-    binary.Read(io.Reader(s), binary.BigEndian, &authority.class)
-    binary.Read(io.Reader(s), binary.BigEndian, &authority.ttl)
-    binary.Read(io.Reader(s), binary.BigEndian, &authority.rdlength)
-    authority.rdata = s.Next(int(authority.rdlength))
+func (authority *Authority) Unpack(m MessageStream) {
+    authority.name = ReadFQName(m)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &authority.rr_type)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &authority.class)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &authority.ttl)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &authority.rdlength)
+    if authority.rr_type == NS && authority.class == IN {
+        authority.rdata = ExpandFQName(m)
+    } else {
+        authority.rdata = m.s.Next(int(authority.rdlength))
+    }
 }
 
 
+func (authority *Authority) String() string {
+    result := fmt.Sprintf("%s ",       strings.Join(authority.name, "."))
+    result += fmt.Sprintf("type=%s ",  Type2string(authority.rr_type))
+    result += fmt.Sprintf("type=%d ",  authority.rr_type)
+    result += fmt.Sprintf("ttl=%d ",   authority.ttl)
+    result += fmt.Sprintf("class=%s ", ClassMap[authority.class])
+    if authority.rr_type == A && authority.class == IN {
+        var ip net.IP = authority.rdata
+        result += fmt.Sprintf("IP=%s\n", ip)
+    } else if authority.rr_type == NS && authority.class == IN {
+        result += fmt.Sprintf("domain=%s\n", String(authority.rdata[:]))
+    } else {
+        result += fmt.Sprintf("size=%d ",  authority.rdlength)
+        result += fmt.Sprintln(authority.rdata)
+    }
+
+    return result
+}

@@ -14,9 +14,9 @@ package dns
 import (
     "io"
     "encoding/binary"
-    "bytes"
     "strings"
     "net"
+    "bytes"
 )
 
 import "fmt"
@@ -24,24 +24,38 @@ import "fmt"
 type Answer ResourceRecord
 
 
-func (answer *Answer) Unpack(s *bytes.Buffer, r []byte) {
-    answer.name  = ReadFQName(s, r)
-    binary.Read(io.Reader(s), binary.BigEndian, &answer.rr_type)
-    binary.Read(io.Reader(s), binary.BigEndian, &answer.class)
-    binary.Read(io.Reader(s), binary.BigEndian, &answer.ttl)
-    binary.Read(io.Reader(s), binary.BigEndian, &answer.rdlength)
-    answer.rdata = s.Next(int(answer.rdlength))
+func (answer *Answer) Unpack(m MessageStream) {
+    answer.name = ReadFQName(m)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &answer.rr_type)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &answer.class)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &answer.ttl)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &answer.rdlength)
+    if answer.rr_type == PTR && answer.class == IN {
+        answer.rdata = ExpandFQName(m)
+    } else {
+        answer.rdata = m.s.Next(int(answer.rdlength))
+    }
+}
+
+
+func (answer *Answer) Pack() []byte {
+    buf := new(bytes.Buffer)
+
+    return buf.Bytes()
 }
 
 
 func (answer *Answer) String() string {
-    result := fmt.Sprintln(strings.Join(answer.name, "."))
-    result += fmt.Sprintln(Type2string(answer.rr_type))
-    result += fmt.Sprintln(answer.ttl)
-    result += fmt.Sprintln(answer.rdlength)
-    if answer.rr_type == A {
+    result := fmt.Sprintf("%s ",       strings.Join(answer.name, "."))
+    result += fmt.Sprintf("type=%s ",  Type2string(answer.rr_type))
+    result += fmt.Sprintf("ttl=%d ",   answer.ttl)
+    result += fmt.Sprintf("class=%s ", ClassMap[answer.class])
+    result += fmt.Sprintf("size=%d ",  answer.rdlength)
+    if answer.rr_type == A && answer.class == IN {
         var ip net.IP = answer.rdata
-        result += fmt.Sprintln(ip)
+        result += fmt.Sprintf("IP=%s\n", ip)
+    } else if answer.rr_type == PTR && answer.class == IN {
+        result += fmt.Sprintf("domain=%s\n", String(answer.rdata[:]))
     } else {
         result += fmt.Sprintln(answer.rdata)
     }

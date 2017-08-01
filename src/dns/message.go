@@ -16,6 +16,7 @@ import (
     "strings"
     "math/rand"
     "net"
+    "time"
     "log"
     "fmt"
     "strconv"
@@ -52,7 +53,7 @@ func hex_dump(buffer []byte) string {
 
 type Message struct {
     header     Header
-    question   []Question  // allow for multiple questions even though most DNS servers don't support this
+    question   []Question  // allow for multiple questions even though most, if not all, DNS servers don't support this
     answer     []Answer
     authority  []Authority
     additional []Additional
@@ -66,7 +67,7 @@ func (message *Message) Recv(sock *net.UDPConn) {
         fmt.Println(hex_dump(buffer[0:rlen]))
         fmt.Println(stringutil.Hexdump(buffer[0:rlen]))
 
-	message.Unpack(bytes.NewBuffer(buffer[:rlen]))
+	//message.Unpack(bytes.NewBuffer(buffer[:rlen]))
         fmt.Println(message.String())
     } else {
        log.Fatal(err)
@@ -85,28 +86,27 @@ func (message Message) Pack() []byte {
 }
 
 
-func (message *Message) Unpack(s *bytes.Buffer) {
-    r := s.Bytes()
-    message.header.Unpack(s)
+func (message *Message) Unpack(m MessageStream) {
+    message.header.Unpack(m.s)
 
     message.question = make([]Question, message.header.Qdcount)
     for i:=0; i<int(message.header.Qdcount); i++ {
-        message.question[i].Unpack(s, r)
+        message.question[i].Unpack(m)
     }
 
     message.answer = make([]Answer, message.header.Ancount)
     for i:=0; i<int(message.header.Ancount); i++ {
-        message.answer[i].Unpack(s, r)
+        message.answer[i].Unpack(m)
     }
 
     message.authority = make([]Authority, message.header.Nscount)
     for i:=0; i<int(message.header.Nscount); i++ {
-        message.authority[i].Unpack(s, r)
+        message.authority[i].Unpack(m)
     }
 
     message.additional = make([]Additional, message.header.Arcount)
     for i:=0; i<int(message.header.Arcount); i++ {
-        message.additional[i].Unpack(s, r)
+        message.additional[i].Unpack(m)
     }
 }
 
@@ -121,37 +121,59 @@ func (message *Message) Query(name string, query uint16) {
     message.header.Init()
 
     message.header.SetField(ID, uint16(rand.Int31n(0xffff)))
-    message.header.SetField(OPCODE, QUERY)
+    message.header.SetField(OPCODE, OPCODE_QUERY)
     message.header.SetField(RD, 1)
 
     message.AddQuestion(query, IN, name)
 }
 
 
-func (message Message) Send(server string) Message {
-    connection, _ := net.Dial("udp", server)
+func (message Message) Send(server string) (answer Message) {
+    if connection, err := net.Dial("udp", server); err == nil {
+	defer connection.Close()
+        connection.Write(message.Pack())   // error handling ... nah
 
-    connection.Write(message.Pack())
+        var buf [MAX_MESSAGE_LENGTH]byte
+	connection.SetReadDeadline(time.Now().Add(2*time.Second))
+	len, err:= connection.Read(buf[:])
+	if err != nil { return }
 
-    var buf [MAX_MESSAGE_LENGTH]byte
-    len, _ := connection.Read(buf[:])
+        answer.Unpack(MessageStream{bytes.NewBuffer(buf[:len]), buf[:len]})
+    }
 
-    var answer Message
-    r := bytes.NewBuffer(buf[:len])
+    return
+}
 
-    answer.Unpack(r)
 
-    return answer
+func PrintArray(x []interface{}) {
+   for _, y := range x {
+       fmt.Println(y)
+   }
 }
 
 
 func (message Message) String() string {
-    result := message.header.String()
+    result := "HEADER\n"
+    result += message.header.String()
+
+    result += "QUESTION\n"
     for _, question := range message.question {
-         result += question.String()
+        result += question.String() + "\n"
     }
+
+    result += "ANSWER\n"
     for _, answer := range message.answer {
-         result += answer.String()
+        result += answer.String()
+    }
+
+    result += "AUTHORITY\n"
+    for _, authority := range message.authority {
+        result += authority.String()
+    }
+
+    result += "ADDITIONAL\n"
+    for _, additional := range message.additional {
+        result += additional.String()
     }
 
     return result

@@ -39,15 +39,33 @@ const (
     ALL   = 255 // A request for all records
 )
 
-func Type2string(rr_type uint16) string {
-    switch rr_type {
-    case A:
-        return "a host address"
-    case NS:
-        return "an authoritative name server"
-    }
-    return "What did you do cowboy";
+
+var TypeMap = map[uint16]string {
+    A     : "A",
+    NS    : "NS",
+    MX    : "MX",
+    SOA   : "SOA",
+    PTR   : "PTR",
+    TXT   : "TXT",
+    CNAME : "CNAME",
 }
+
+
+func Type2string(rr_type uint16) string {
+    return TypeMap[rr_type]
+}
+
+
+func String2type(value string) uint16 {
+    for k, v := range TypeMap {
+	if v == value {
+            return k
+        }
+    }
+
+    return 0
+}
+
 
 // CLASS values
 const (
@@ -57,29 +75,38 @@ const (
     HS = 4 // Hesiod [Dyer 87]
 )
 
+var ClassMap = map[uint16]string {
+    IN : "Internet",
+    CS : "CSNET",
+    CH : "CHAOS",
+    HS : "Hesiod",
+}
+
 
 const (
-    QUERY  = 0 // a standard query (QUERY)
-    IQUERY = 1 // an inverse query (IQUERY)
-    STATUS = 2 // a server status request (STATUS)
+    OPCODE_QUERY  = 0 // a standard query (QUERY)
+    OPCODE_IQUERY = 1 // an inverse query (IQUERY)
+    OPCODE_STATUS = 2 // a server status request (STATUS)
 )
 
 const (
     ID     = iota
-    GR     = iota
+    STATUS = iota
+    QR     = iota
     OPCODE = iota
     AA     = iota
     TC     = iota
     RD     = iota
     RA     = iota
-    QR     = iota
+    Z      = iota
     RCODE  = iota
 )
 
+/*
 const (
     QDCOUNT = iota
     ANCOUNT = iota
     NSCOUNT = iota
     ARCOUNT = iota
 )
-
+*/
