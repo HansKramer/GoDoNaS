@@ -17,7 +17,7 @@ const MAX_MESSAGE_LENGTH int = 512
 
 // TYPE Values
 const (
-    A     = 1   // a host address
+    A  uint16 = 1   // a host address
     NS    = 2   // an authoritative name server
     MD    = 3   // a mail destination (Obsolete - use MX)
     MF    = 4   // a mail forwarder (Obsolete - use MX)

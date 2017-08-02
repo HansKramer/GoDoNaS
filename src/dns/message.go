@@ -124,7 +124,24 @@ func (message *Message) Query(name string, query uint16) {
     message.header.SetField(OPCODE, OPCODE_QUERY)
     message.header.SetField(RD, 1)
 
+    message.question = message.question[:0]
     message.AddQuestion(query, IN, name)
+}
+
+
+func (message Message) SendRaw(server string) (stream MessageStream) {
+    connection, err := net.Dial("udp", server)
+    if err != nil { return }
+    defer connection.Close()
+
+    connection.Write(message.Pack())   // error handling ... nah
+
+    var buf [MAX_MESSAGE_LENGTH]byte
+    connection.SetReadDeadline(time.Now().Add(2*time.Second))
+    len, err:= connection.Read(buf[:])
+    if err != nil { return }
+
+    return MessageStream{bytes.NewBuffer(buf[:len]), buf[:len]}
 }
 
 

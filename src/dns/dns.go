@@ -16,6 +16,8 @@ import (
     "io"
     "encoding/binary"
     "bytes"
+    "os"
+    "stringutil"
 )
 
 
@@ -32,6 +34,26 @@ type ResourceRecord struct {
     ttl      uint32
     rdlength uint16
     rdata    []byte
+}
+
+
+func (m MessageStream) WriteToFile(filename string) (err error) {
+    f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+    if err != nil { return }
+    defer f.Close()
+
+    _, err = f.Write(m.r)
+    return 
+}
+
+
+func (m MessageStream) WriteToStdout() {
+    os.Stdout.Write(m.r)
+}
+
+
+func (m MessageStream) Hexdump() string {
+    return stringutil.Hexdump(m.r)
 }
 
 
@@ -84,20 +106,3 @@ func String(r []byte) (value string) {
     }
     return value[:len(value)-1]
 }
-
-
-
-// move out 
-/*
-
-type Additional ResourceRecord
-
-func (additional *Additional) Unpack(s *bytes.Buffer, r []byte) {
-    additional.name  = ReadFQName(MessageStream{s, r})
-    binary.Read(io.Reader(s), binary.BigEndian, &additional.rr_type)
-    binary.Read(io.Reader(s), binary.BigEndian, &additional.class)
-    binary.Read(io.Reader(s), binary.BigEndian, &additional.ttl)
-    binary.Read(io.Reader(s), binary.BigEndian, &additional.rdlength)
-    additional.rdata = s.Next(int(additional.rdlength))
-}
-*/

@@ -2,10 +2,16 @@ package stringutil
 
 import (
    "fmt"
-   "strconv"
+//   "strconv"
+   "unicode"
 )
 
 func reset(a []byte) {
+}
+
+
+func isPrintable(x rune) bool {
+    return x<127 && unicode.IsPrint(x)
 }
 
 
@@ -16,7 +22,7 @@ func Hexdump(buffer []byte) (result string) {
     }
     for i, b := range buffer[:] {
         result += fmt.Sprintf("%02X ", b)
-        if strconv.IsPrint(rune(b)) {
+        if isPrintable(rune(b)) {
             ascii[i%16] = b
         }
         if i % 16 == 15 {
