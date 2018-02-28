@@ -18,6 +18,7 @@ import (
     "bytes"
     "os"
     "stringutil"
+    "strings"
 )
 
 
@@ -34,6 +35,19 @@ type ResourceRecord struct {
     ttl      uint32
     rdlength uint16
     rdata    []byte
+}
+
+
+func (rs *ResourceRecord) SetName(name string) {
+    rs.name = strings.Split(name, ".")
+}
+
+
+func New(buf []byte) *MessageStream {
+    return &MessageStream{
+	s : bytes.NewBuffer(buf),
+	r : buf,
+    }
 }
 
 
@@ -54,6 +68,19 @@ func (m MessageStream) WriteToStdout() {
 
 func (m MessageStream) Hexdump() string {
     return stringutil.Hexdump(m.r)
+}
+
+
+func ReadSOA(m MessageStream) (mname string, rname string, serial int32, refresh int32, retry int32, expire int32, minimum int32) {
+    mname   = String(ExpandFQName(m))
+    rname   = String(ExpandFQName(m))
+    binary.Read(io.Reader(m.s), binary.BigEndian, &serial)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &refresh)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &retry)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &expire)
+    binary.Read(io.Reader(m.s), binary.BigEndian, &minimum)
+
+    return
 }
 
 
@@ -93,6 +120,11 @@ func WriteFQName(name []string) []byte {
 
 func ExpandFQName(m MessageStream) []byte {
     return WriteFQName(ReadFQName(m))
+}
+
+
+func String2(r []string) (value string) {
+    return strings.Join(r, ".")
 }
 
 

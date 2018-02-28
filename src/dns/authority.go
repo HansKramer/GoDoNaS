@@ -49,6 +49,10 @@ func (authority *Authority) String() string {
         result += fmt.Sprintf("IP=%s\n", ip)
     } else if authority.rr_type == NS && authority.class == IN {
         result += fmt.Sprintf("domain=%s\n", String(authority.rdata[:]))
+    } else if authority.rr_type == SOA && authority.class == IN {
+	ms := New(authority.rdata[:])
+	mname, rname, serial, refresh, retry, expire, minimum := ReadSOA(*ms)
+	result += fmt.Sprintf("soa=%s %s %d %d %d %d %d\n", mname, rname, serial, refresh, retry, expire, minimum)
     } else {
         result += fmt.Sprintf("size=%d ",  authority.rdlength)
         result += fmt.Sprintln(authority.rdata)

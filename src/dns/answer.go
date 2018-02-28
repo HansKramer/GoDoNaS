@@ -45,6 +45,11 @@ func (answer *Answer) Pack() []byte {
 }
 
 
+func (answer Answer) Get() (net.IP) {
+    return answer.rdata
+}
+
+
 func (answer *Answer) String() string {
     result := fmt.Sprintf("%s ",       strings.Join(answer.name, "."))
     result += fmt.Sprintf("type=%s ",  Type2string(answer.rr_type))

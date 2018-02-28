@@ -19,35 +19,9 @@ import (
     "time"
     "log"
     "fmt"
-    "strconv"
     "stringutil"
 )
 
-// debug function
-func hex_dump(buffer []byte) string {
-    result := ""
-
-    var ascii [16]byte
-    for i := range ascii { ascii[i] = '.' }
-    for i, b := range buffer[:] {
-        result += fmt.Sprintf("%02X ", b)
-        if strconv.IsPrint(rune(b)) {
-            ascii[i%16] = b
-        }
-        if i % 16 == 15 {
-            result += fmt.Sprintf(" %s\n", ascii)
-            for i := range ascii { ascii[i] = '.' }
-        }
-    }
-    if len(buffer) % 16 != 0 {
-        for i := 0; i < 16 - (len(buffer) % 16); i++ {
-            result += fmt.Sprintf("   ")
-        } 
-        result += fmt.Sprintf(" %s\n", ascii[:len(buffer)%16])
-    }
-
-    return result
-}
 
 // Message
 
@@ -64,7 +38,6 @@ func (message *Message) Recv(sock *net.UDPConn) {
     var buffer [MAX_MESSAGE_LENGTH]byte
     if rlen, remote, err := sock.ReadFromUDP(buffer[:]); err == nil {
         log.Printf("%s %d", remote, rlen)
-        fmt.Println(hex_dump(buffer[0:rlen]))
         fmt.Println(stringutil.Hexdump(buffer[0:rlen]))
 
 	//message.Unpack(bytes.NewBuffer(buffer[:rlen]))
@@ -117,7 +90,7 @@ func (message *Message) AddQuestion(qtype uint16, qclass uint16, name string) {
 }
 
 
-func (message *Message) Query(name string, query uint16) {
+func (message *Message) Query(name string, query uint16, class uint16) {
     message.header.Init()
 
     message.header.SetField(ID, uint16(rand.Int31n(0xffff)))
@@ -125,7 +98,7 @@ func (message *Message) Query(name string, query uint16) {
     message.header.SetField(RD, 1)
 
     message.question = message.question[:0]
-    message.AddQuestion(query, IN, name)
+    message.AddQuestion(query, class, name)
 }
 
 
@@ -162,9 +135,20 @@ func (message Message) Send(server string) (answer Message) {
 }
 
 
-func PrintArray(x []interface{}) {
-   for _, y := range x {
-       fmt.Println(y)
+func (message Message) Question() ([]string, bool) {
+    if message.header.Qdcount >= 1 {
+        return message.question[0].Get(), true
+    }
+    return nil, false
+}
+
+
+func (message Message) Answer() (net.IP, bool) {
+   fmt.Println(message.header.Ancount)
+   if message.header.Ancount > 0 {
+       return message.answer[0].Get(), true
+   } else {
+       return nil, false
    }
 }
 

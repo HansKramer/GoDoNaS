@@ -67,6 +67,17 @@ func String2type(value string) uint16 {
 }
 
 
+func Value2Key(dict map[uint16]string, value string) uint16 {
+    for k, v := range dict {
+	if v == value {
+            return k
+        }
+    }
+
+    return 0
+}
+
+
 // CLASS values
 const (
     IN = 1 // the Internet

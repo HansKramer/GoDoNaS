@@ -37,6 +37,11 @@ func (question Question) Pack() []byte {
 }
 
 
+func (question Question) Get() ([]string) {
+    return question.qname
+}
+
+
 func (question *Question) Unpack(m MessageStream) {
     question.qname = ReadFQName(m)
     binary.Read(io.Reader(m.s), binary.BigEndian, &question.qtype)
