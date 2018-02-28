@@ -164,7 +164,7 @@ func (message Message) String() string {
 
     result += "ANSWER\n"
     for _, answer := range message.answer {
-        result += answer.String()
+        fmt.Println("AAA" + answer.String())
     }
 
     result += "AUTHORITY\n"

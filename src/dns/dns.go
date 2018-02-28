@@ -19,6 +19,7 @@ import (
     "os"
     "stringutil"
     "strings"
+    "fmt"
 )
 
 
@@ -71,6 +72,20 @@ func (m MessageStream) Hexdump() string {
 }
 
 
+func ReadSOADebug(m MessageStream) (mname string, rname string, serial int32, refresh int32, retry int32, expire int32, minimum int32) {
+fmt.Println("ReadSOADebug")
+    mname   = String(ExpandFQNameDebug(m))
+fmt.Println("mname" + mname)
+    rname   = String(ExpandFQNameDebug(m))
+fmt.Println("rname" + rname)
+//    binary.Read(io.Reader(m.s), binary.BigEndian, &serial)
+//    binary.Read(io.Reader(m.s), binary.BigEndian, &refresh)
+//    binary.Read(io.Reader(m.s), binary.BigEndian, &retry)
+//    binary.Read(io.Reader(m.s), binary.BigEndian, &expire)
+//    binary.Read(io.Reader(m.s), binary.BigEndian, &minimum)
+
+    return
+}
 func ReadSOA(m MessageStream) (mname string, rname string, serial int32, refresh int32, retry int32, expire int32, minimum int32) {
     mname   = String(ExpandFQName(m))
     rname   = String(ExpandFQName(m))
@@ -83,6 +98,33 @@ func ReadSOA(m MessageStream) (mname string, rname string, serial int32, refresh
     return
 }
 
+
+func ReadFQNameDebug(m MessageStream) []string {
+    var oct_len uint8
+    var data    []string
+    for {
+        binary.Read(io.Reader(m.s), binary.BigEndian, &oct_len)
+ fmt.Println("oct_len")
+ fmt.Println(oct_len)
+        if oct_len == 0 {
+ fmt.Println(data)
+ fmt.Println("done")
+            return data
+        }
+        if (oct_len & 0xc0) == 0xc0 {  // it's a pointer
+            offset := int16(oct_len & 0x3f) * 256
+            binary.Read(io.Reader(m.s), binary.BigEndian, &oct_len)
+            offset += int16(oct_len)
+ fmt.Println("pointer", offset)
+ fmt.Println(m.r[offset-1:])
+ fmt.Println(offset)
+ fmt.Println(data)
+ fmt.Println("done")
+            return append(data, ReadFQNameDebug(MessageStream{bytes.NewBuffer(m.r[offset:]), m.r})...)
+        }
+        data = append(data, string(m.s.Next(int(oct_len))))
+    }
+}
 
 func ReadFQName(m MessageStream) []string {
     var oct_len uint8
@@ -115,6 +157,11 @@ func WriteFQName(name []string) []byte {
     binary.Write(buf, binary.BigEndian, byte(0))
 
     return buf.Bytes()
+}
+
+
+func ExpandFQNameDebug(m MessageStream) []byte {
+    return WriteFQName(ReadFQNameDebug(m))
 }
 
 

@@ -24,6 +24,17 @@ import (
 type Authority ResourceRecord
 
 
+func parseSOA(m MessageStream) (bytestream []byte) {
+    bytestream = ExpandFQName(m)
+    bytestream = append(bytestream, ExpandFQName(m)...)
+    var buffer [5*4]byte
+    binary.Read(io.Reader(m.s), binary.BigEndian, &buffer)
+    bytestream = append(bytestream, buffer[:]...)
+
+    return
+}
+
+
 func (authority *Authority) Unpack(m MessageStream) {
     authority.name = ReadFQName(m)
     binary.Read(io.Reader(m.s), binary.BigEndian, &authority.rr_type)
@@ -32,6 +43,8 @@ func (authority *Authority) Unpack(m MessageStream) {
     binary.Read(io.Reader(m.s), binary.BigEndian, &authority.rdlength)
     if authority.rr_type == NS && authority.class == IN {
         authority.rdata = ExpandFQName(m)
+    } else if authority.rr_type == SOA && authority.class == IN {
+        authority.rdata = parseSOA(m)
     } else {
         authority.rdata = m.s.Next(int(authority.rdlength))
     }
