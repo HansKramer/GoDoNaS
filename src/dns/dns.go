@@ -72,20 +72,6 @@ func (m MessageStream) Hexdump() string {
 }
 
 
-func ReadSOADebug(m MessageStream) (mname string, rname string, serial int32, refresh int32, retry int32, expire int32, minimum int32) {
-fmt.Println("ReadSOADebug")
-    mname   = String(ExpandFQNameDebug(m))
-fmt.Println("mname" + mname)
-    rname   = String(ExpandFQNameDebug(m))
-fmt.Println("rname" + rname)
-//    binary.Read(io.Reader(m.s), binary.BigEndian, &serial)
-//    binary.Read(io.Reader(m.s), binary.BigEndian, &refresh)
-//    binary.Read(io.Reader(m.s), binary.BigEndian, &retry)
-//    binary.Read(io.Reader(m.s), binary.BigEndian, &expire)
-//    binary.Read(io.Reader(m.s), binary.BigEndian, &minimum)
-
-    return
-}
 func ReadSOA(m MessageStream) (mname string, rname string, serial int32, refresh int32, retry int32, expire int32, minimum int32) {
     mname   = String(ExpandFQName(m))
     rname   = String(ExpandFQName(m))

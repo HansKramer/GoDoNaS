@@ -19,7 +19,6 @@ import (
     "time"
     "log"
     "fmt"
-    "stringutil"
 )
 
 
@@ -34,18 +33,18 @@ type Message struct {
 }
 
 
-func (message *Message) Recv(sock *net.UDPConn) {
-    var buffer [MAX_MESSAGE_LENGTH]byte
-    if rlen, remote, err := sock.ReadFromUDP(buffer[:]); err == nil {
-        log.Printf("%s %d", remote, rlen)
-        fmt.Println(stringutil.Hexdump(buffer[0:rlen]))
-
-	//message.Unpack(bytes.NewBuffer(buffer[:rlen]))
-        fmt.Println(message.String())
-    } else {
-       log.Fatal(err)
-    }
-}
+//func (message *Message) Recv(sock *net.UDPConn) {
+//    var buffer [MAX_MESSAGE_LENGTH]byte
+//    if rlen, remote, err := sock.ReadFromUDP(buffer[:]); err == nil {
+//        log.Printf("%s %d", remote, rlen)
+//        //fmt.Println(stringutil.Hexdump(buffer[0:rlen]))
+//
+//	message.Unpack(MessageStream{bytes.NewBuffer(buffer[:rlen]), buffer[:rlen]})
+//        //fmt.Println(message.String())
+//    } else {
+//       log.Fatal(err)
+//    }
+//}
 
 
 func (message Message) Pack() []byte {
